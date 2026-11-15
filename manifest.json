@@ -1,0 +1,12 @@
+{
+  "name": "MyUEFN",
+  "short_name": "MyUEFN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#05060b",
+  "theme_color": "#0b0f1d",
+  "icons": [
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

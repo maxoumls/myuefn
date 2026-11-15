@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>MyUEFN</title>
+<meta name="theme-color" content="#0b0f1d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MyUEFN">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: sticky app bar (logo + menu), page title row, then one centred column per tab — Dashboard / Maps / Activité */
+:root{
+  color-scheme:dark;
+  --bg:#05060b; --bar-top:#121a33; --bar-bot:#0b0f1d; --btn:#141826;
+  --surface:#10121b; --surface-2:#1a1d2b; --line:#232738;
+  --fg:#f3f4fa; --muted:#868ba2; --soft:#b7bbd2; --ink:#0b0d1a; --white:#ffffff; --sel:#272c5f; --int-low:#c4c9f4;
+  --accent:#8f97ff; --accent-deep:#3a41a3; --glow:rgba(66,76,200,.22);
+  --brand-a:#4d7bff; --brand-b:#3a5be0; --brand-glow:rgba(61,107,242,.45); --shadow:rgba(0,0,0,.55);
+  --good:#5fd394; --good-bg:#11291e; --bad:#f08a8a; --bad-bg:#2b1517;
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{background:var(--bg);-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom,0px);-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:inherit}
+button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.appbar{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+.appbar-in{position:relative;max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px;padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.logo{width:44px;height:44px;flex:none;border-radius:13px;background:linear-gradient(135deg,var(--brand-a),var(--brand-b));display:grid;place-items:center;font-size:15px;font-weight:800;letter-spacing:.02em;color:var(--white);box-shadow:0 4px 20px var(--brand-glow)}
+.brand{margin:0;font-size:21px;font-weight:800;letter-spacing:.005em;flex:1;min-width:0}
+.ibtn{width:46px;height:46px;flex:none;border-radius:14px;border:1px solid var(--line);background:var(--btn);color:var(--fg);display:grid;place-items:center}
+.ibtn[aria-pressed="true"],.ibtn[aria-expanded="true"]{border-color:var(--accent-deep)}
+.menu{position:absolute;top:calc(100% + 8px);right:max(16px,env(safe-area-inset-right,0px));width:min(260px,calc(100vw - 32px));padding:6px;border-radius:18px;background:var(--surface);border:1px solid var(--line);box-shadow:0 18px 44px var(--shadow)}
+.menu button{width:100%;display:flex;align-items:center;gap:12px;padding:12px;border:0;border-radius:12px;background:transparent;color:var(--soft);font-size:16px;font-weight:600;text-align:left}
+.menu button[aria-current="page"]{background:var(--surface-2);color:var(--fg)}
+.menu button[aria-current="page"] svg{color:var(--accent)}
+.menu .lbl{flex:1}
+.count{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--accent);color:var(--ink);font-size:11px;font-weight:800;display:grid;place-items:center}
+
+.page{position:relative;max-width:560px;margin:0 auto;padding-block:18px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:hidden}
+.page::before{content:"";position:absolute;left:50%;top:150px;width:min(640px,140%);aspect-ratio:1;transform:translateX(-50%);background:radial-gradient(closest-side,var(--glow),transparent);pointer-events:none;z-index:0}
+.page>*{position:relative;z-index:1}
+
+.titlebar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.titlebar h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.015em}
+.live{display:flex;align-items:center;gap:8px;margin:4px 0 0;color:var(--muted);font-size:15px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex:none}
+.live.on .dot{background:var(--accent);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(143,151,255,.55)}70%{box-shadow:0 0 0 8px rgba(143,151,255,0)}100%{box-shadow:0 0 0 0 rgba(143,151,255,0)}}
+.actions{display:flex;align-items:center;gap:10px;flex:none}
+.cur{display:flex;gap:2px;padding:4px;border-radius:999px;background:var(--surface);border:1px solid var(--line)}
+.cur button{width:42px;height:34px;border-radius:999px;border:1px solid transparent;background:transparent;font-size:17px;font-weight:700;color:var(--muted)}
+.cur button[aria-pressed="true"]{background:var(--sel);border-color:var(--accent-deep);color:var(--fg)}
+.mega{position:relative;width:42px;height:42px;border:0;border-radius:50%;background:transparent;color:var(--soft);display:grid;place-items:center}
+.mega .count{position:absolute;top:0;right:-2px}
+
+.maps{display:flex;gap:8px;margin-top:18px;overflow-x:auto;scrollbar-width:none;padding:2px}
+.maps::-webkit-scrollbar{display:none}
+.chip{flex:none;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--soft);font-size:14px;font-weight:600;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--surface-2);border-color:var(--accent-deep);color:var(--fg)}
+
+.hero{margin-top:26px;text-align:center}
+.daynav{display:flex;align-items:center;justify-content:center;gap:10px}
+.daynav button{width:40px;height:40px;border:0;border-radius:50%;background:transparent;color:var(--muted);font-size:22px;line-height:1}
+.daynav button:disabled{opacity:.25;cursor:default}
+.daypill{min-width:170px;padding:12px 24px;border-radius:999px;background:var(--surface);color:var(--soft);font-size:17px;font-weight:500}
+.big{display:flex;justify-content:center;align-items:baseline;margin-top:18px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.big .int{font-size:clamp(68px,23vw,124px);font-weight:800;letter-spacing:-.05em;line-height:1.05;padding:0 .08em 0 .02em;background:linear-gradient(180deg,var(--white) 30%,var(--int-low));-webkit-background-clip:text;background-clip:text;color:transparent}
+.big .dec{font-size:clamp(26px,8.5vw,44px);font-weight:700;color:var(--soft);opacity:.85;margin-left:-.04em}
+.cmp{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px 12px;margin-top:16px;color:var(--soft);font-size:16px;font-variant-numeric:tabular-nums}
+.pill{padding:7px 14px;border-radius:999px;font-weight:700;font-size:15px}
+.pill.up{background:var(--good-bg);color:var(--good)}
+.pill.down{background:var(--bad-bg);color:var(--bad)}
+
+.chartwrap{margin-top:34px;position:relative}
+.chart-head{display:flex;justify-content:flex-end}
+.metric{appearance:none;-webkit-appearance:none;width:auto;border:0;background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23b7bbd2' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 4px center;color:var(--soft);font:600 15px var(--font);padding:6px 24px 6px 8px;cursor:pointer;text-align:right;text-align-last:right}
+.metric option{background:var(--surface);color:var(--fg)}
+#chart{width:100%;min-height:210px;touch-action:pan-y}
+#chart svg{display:block;overflow:visible}
+.tip{position:absolute;top:34px;padding:6px 10px;border-radius:10px;background:var(--surface-2);border:1px solid var(--line);font-size:13px;font-weight:600;white-space:nowrap;pointer-events:none;font-variant-numeric:tabular-nums}
+.tip span{color:var(--muted);font-weight:500}
+
+.sec-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:30px}
+.sec-head h2{margin:0;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sec-head .total{font-size:13px;color:var(--soft);font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.tile{padding:14px 16px;border-radius:16px;background:var(--surface);border:1px solid var(--line);min-width:0}
+.tile .lbl{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:flex;align-items:center;gap:6px}
+.tile .val{margin-top:8px;font-size:26px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.tile .sub{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tile.hl{border-color:var(--accent-deep)}
+.tile.hl .dot{width:7px;height:7px;background:var(--accent)}
+.foot{margin-top:26px;font-size:12px;line-height:1.6;color:var(--muted)}
+
+.rank{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.row-main{width:100%;text-align:left;padding:14px;border-radius:16px;border:1px solid var(--line);background:var(--surface)}
+.row-main[aria-pressed="true"]{border-color:var(--accent-deep)}
+.row-top{display:flex;justify-content:space-between;gap:10px;font-weight:600;font-size:16px}
+.row-top .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.row-top .amt{flex:none;font-variant-numeric:tabular-nums}
+.row-code{margin-top:2px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:.03em}
+.bar{margin-top:10px;height:6px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:inherit;background:var(--accent)}
+.row-sub{margin-top:8px;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+.card{margin-top:16px;padding:16px;border-radius:16px;background:var(--surface);border:1px solid var(--line)}
+.card.hl{border-color:var(--accent-deep)}
+.card h3{margin:0;font-size:16px;font-weight:700}
+.card p{margin:6px 0 0;font-size:14px;line-height:1.5;color:var(--soft)}
+.card ol{margin:10px 0 0;padding-left:20px;font-size:14px;line-height:1.6;color:var(--soft)}
+.card code{font-size:13px;padding:1px 6px;border-radius:6px;background:var(--surface-2);color:var(--fg)}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 16px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--soft);font-weight:600;font-size:14px;text-decoration:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--ink)}
+.btn:disabled{opacity:.5;cursor:default}
+.msg{margin-top:10px;font-size:13px;color:var(--bad)}
+.msg.ok{color:var(--good)}
+#pushCode{width:100%;margin-top:10px;min-height:90px;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--soft);font:12px ui-monospace,SFMono-Regular,Menlo,monospace;resize:none;word-break:break-all}
+
+.notif-list{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:8px}
+.notif-list li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:start;padding:13px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);font-size:14px;line-height:1.45;color:var(--soft)}
+.notif-list li.new{color:var(--fg);font-weight:600;border-color:var(--accent-deep)}
+.notif-list .when{color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:1px}
+.notif-empty{margin:16px 0 0;padding:16px;border-radius:14px;border:1px dashed var(--line);font-size:14px;color:var(--muted);line-height:1.5}
+
+@media (max-width:380px){.titlebar h1{font-size:26px}.cur button{width:38px}.actions{gap:6px}}
+@media (prefers-reduced-motion:reduce){.live.on .dot{animation:none}}
+</style>
+</head>
+<body>
+<header class="appbar">
+  <div class="appbar-in">
+    <div class="logo" aria-hidden="true">MU</div>
+    <p class="brand">MyUEFN</p>
+    <button class="ibtn" id="eye" type="button" aria-pressed="false" aria-label="Masquer les montants">
+      <svg id="eyeOn" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      <svg id="eyeOff" hidden width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2"/><path d="M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+    </button>
+    <button class="ibtn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+    </button>
+    <nav class="menu" id="menu" hidden aria-label="Onglets">
+      <button type="button" id="tab-dashboard" data-tab="dashboard">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span class="lbl">Dashboard</span>
+      </button>
+      <button type="button" id="tab-maps" data-tab="maps">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"/><path d="M9 4v14M15 6v14"/></svg>
+        <span class="lbl">Maps</span>
+      </button>
+      <button type="button" id="tab-activite" data-tab="activite">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+        <span class="lbl">Activité</span><span class="count" id="menuCount" hidden></span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main class="page">
+  <div class="titlebar">
+    <div>
+      <h1 id="pageTitle">Dashboard</h1>
+      <p class="live" id="live"><span class="dot"></span><span id="liveTxt">Chargement…</span></p>
+    </div>
+    <div class="actions">
+      <div class="cur" role="group" aria-label="Devise">
+        <button id="cur-eur" data-cur="eur" aria-pressed="false" aria-label="Euros">€</button>
+        <button id="cur-usd" data-cur="usd" aria-pressed="true" aria-label="Dollars">$</button>
+      </div>
+      <button class="mega" id="mega" type="button" aria-label="Activité">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+        <span class="count" id="badge" hidden></span>
+      </button>
+    </div>
+  </div>
+
+  <div id="view-dashboard">
+    <nav class="maps" id="mapsNav" aria-label="Maps suivies"></nav>
+
+    <section class="hero">
+      <div class="daynav">
+        <button id="prev" aria-label="Jour précédent">‹</button>
+        <div class="daypill" id="dayLabel">CA du jour</div>
+        <button id="next" aria-label="Jour suivant">›</button>
+      </div>
+      <div class="big" id="big" aria-live="polite"><span class="int">0</span><span class="dec">,00 $</span></div>
+      <div class="cmp"><span class="pill" id="pill" hidden></span><span id="cmpTxt">—</span></div>
+    </section>
+
+    <section class="chartwrap">
+      <div class="chart-head">
+        <select class="metric" id="metric" aria-label="Courbe affichée">
+          <option value="rev">CA</option>
+          <option value="u">Joueurs / h</option>
+          <option value="c">Pic de joueurs</option>
+          <option value="m">Minutes jouées</option>
+        </select>
+      </div>
+      <div id="chart"></div>
+      <div class="tip" id="tip" hidden></div>
+    </section>
+
+    <div class="sec-head"><h2 id="tilesTitle">Aujourd'hui</h2></div>
+    <section class="tiles">
+      <div class="tile hl"><div class="lbl"><span class="dot"></span>Joueurs connectés</div><div class="val" id="v-live">—</div><div class="sub" id="s-live">&nbsp;</div></div>
+      <div class="tile hl"><div class="lbl">Dernière heure</div><div class="val" id="v-last">—</div><div class="sub" id="s-last">&nbsp;</div></div>
+      <div class="tile"><div class="lbl">Pic de joueurs</div><div class="val" id="v-peak">—</div><div class="sub" id="s-peak">&nbsp;</div></div>
+      <div class="tile"><div class="lbl">Moyenne joueurs / h</div><div class="val" id="v-avg">—</div><div class="sub" id="s-avg">&nbsp;</div></div>
+      <div class="tile"><div class="lbl">Minutes jouées</div><div class="val" id="v-min">—</div><div class="sub" id="s-min">&nbsp;</div></div>
+      <div class="tile"><div class="lbl">Parties lancées</div><div class="val" id="v-plays">—</div><div class="sub">sur la journée</div></div>
+    </section>
+
+    <p class="foot">Revenu estimé : 688 $ par million de minutes jouées. Données officielles Epic, relevées chaque heure. 1 $ = 0,87 € (taux fixe). <span id="footData"></span></p>
+  </div>
+
+  <div id="view-maps" hidden>
+    <div class="sec-head"><h2 id="cmpTitle">Classement</h2><span class="total" id="cmpTotal"></span></div>
+    <ol class="rank" id="rank"></ol>
+    <div class="card">
+      <h3>Ajouter ou retirer une map</h3>
+      <p>La liste est dans le fichier <code>maps.json</code>. Ajoute une ligne avec le code de l'île et son nom, puis valide. La map apparaît dans la minute.</p>
+      <div class="btns"><a class="btn" id="editMaps" href="https://github.com/maxoumls/myuefn/edit/main/maps.json" target="_blank" rel="noopener">Modifier sur GitHub</a></div>
+    </div>
+  </div>
+
+  <div id="view-activite" hidden>
+    <div class="card hl" id="pushCard">
+      <h3>Notifications toutes les heures</h3>
+      <p id="pushIntro">Chaque heure, MyUEFN t'envoie les joueurs connectés et le revenu de la dernière heure, map par map.</p>
+      <div id="pushStep1">
+        <div class="btns"><button class="btn primary" id="pushBtn" type="button">Activer les notifications</button></div>
+      </div>
+      <div id="pushStep2" hidden>
+        <p>Dernière étape : donne ce code à GitHub.</p>
+        <textarea id="pushCode" readonly aria-label="Code des notifications"></textarea>
+        <div class="btns">
+          <button class="btn primary" id="copyBtn" type="button">Copier le code</button>
+          <a class="btn" href="https://github.com/maxoumls/myuefn/settings/secrets/actions/new" target="_blank" rel="noopener">Ouvrir GitHub</a>
+        </div>
+        <ol>
+          <li>Dans GitHub, écris <code>MYUEFN_PUSH</code> dans « Name ».</li>
+          <li>Colle le code dans « Secret », puis appuie sur « Add secret ».</li>
+          <li>La notification suivante arrive au prochain relevé.</li>
+        </ol>
+      </div>
+      <p class="msg" id="pushMsg" hidden></p>
+    </div>
+    <ol class="notif-list" id="notifList"></ol>
+    <p class="notif-empty" id="notifEmpty" hidden>Rien pour l'instant. Les premières lignes arrivent au prochain relevé horaire.</p>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(function(){
+  const RAW = 'https://raw.githubusercontent.com/maxoumls/myuefn/main/data.json';
+  const RATE = 0.000688, EUR = 0.8692, TZ = 'Europe/Paris', MAX_BACK = 30;
+  const DEFAULT_MAPS = [{ code:'6587-0251-4953', name:'Go Up For Eggs' }, { code:'7786-0958-2481', name:'The Pillars' }];
+  const TABS = { dashboard:'Dashboard', maps:'Maps', activite:'Activité' };
+  const $ = s => document.querySelector(s);
+  const mk = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const isNum = v => typeof v === 'number' && isFinite(v);
+  const mean = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const dayFmt = new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'});
+  const hmFmt = new Intl.DateTimeFormat('fr-FR',{timeZone:TZ,hour:'2-digit',minute:'2-digit'});
+  const shortFmt = new Intl.DateTimeFormat('fr-FR',{timeZone:'UTC',day:'numeric',month:'short'});
+  const dayKey = d => dayFmt.format(d);
+  const keyDate = k => new Date(k + 'T12:00:00Z');
+  const addDays = (k,n) => { const d = keyDate(k); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); };
+  const short = k => shortFmt.format(keyDate(k));
+  const nf = {};
+  const num = (v,dec=0) => (nf[dec] ||= new Intl.NumberFormat('fr-FR',{minimumFractionDigits:dec,maximumFractionDigits:dec})).format(v);
+  const store = (k,v) => { try { localStorage.setItem(k, v); } catch(e){} };
+  const load = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
+  const hashTab = () => { const h = (location.hash || '').slice(1); return TABS[h] ? h : 'dashboard'; };
+  const range = t => hmFmt.format(new Date(t)) + '–' + hmFmt.format(new Date(+new Date(t) + 36e5));
+
+  const state = { data:null, loaded:false, failed:false, sel:null, picked:false, metric:'rev', cur:'usd',
+    code:DEFAULT_MAPS[0].code, seen:'', tab:hashTab(), menu:false, hide:false, openedSeen:undefined, fetching:false };
+  const c0 = load('myuefn-cur'); if (c0 === 'eur' || c0 === 'usd') state.cur = c0;
+  const m0 = load('myuefn-metric'); if (['rev','u','c','m'].includes(m0)) state.metric = m0;
+  const k0 = load('myuefn-map'); if (k0) state.code = k0;
+  state.hide = load('myuefn-hide') === '1';
+  state.seen = load('myuefn-seen') || '';
+  try { const d0 = JSON.parse(load('myuefn-data') || 'null'); if (d0 && d0.byCode) state.data = d0; } catch(e){}
+  if (state.tab === 'activite') state.openedSeen = state.seen;
+  $('#metric').value = state.metric;
+
+  const sym = () => state.cur === 'eur' ? '€' : '$';
+  const money = usd => state.hide ? '•••• ' + sym() : (state.cur === 'eur' ? num(usd*EUR,2) : num(usd,2)) + ' ' + sym();
+  const today = () => dayKey(new Date());
+  const EMPTY = { days:new Map(), live:null, lastData:null, lastHour:null };
+
+  function mapList(){
+    const l = (state.data && Array.isArray(state.data.maps) ? state.data.maps : []).filter(m => m && typeof m.code === 'string');
+    return l.length ? l : DEFAULT_MAPS;
+  }
+  const nameOf = c => { const m = mapList().find(x => x.code === c); return (m && m.name) || c; };
+
+  function model(){
+    const maps = new Map(), by = (state.data && state.data.byCode) || {};
+    for (const [c,v] of Object.entries(by)){
+      if (!v || typeof v !== 'object') continue;
+      const p = { days:new Map(), live:v.live || null, lastData:null, lastHour:null };
+      for (const h of Array.isArray(v.hours) ? v.hours : []){
+        if (!h || typeof h.t !== 'string') continue;
+        const dt = new Date(h.t); if (isNaN(dt)) continue;
+        const k = dayKey(dt);
+        let d = p.days.get(k); if (!d){ d = {m:0,pl:0,u:[],c:null,n:0}; p.days.set(k,d); }
+        if (isNum(h.m)){ d.m += h.m; d.n++; if (!p.lastData || h.t > p.lastData){ p.lastData = h.t; p.lastHour = h; } }
+        if (isNum(h.pl)) d.pl += h.pl;
+        if (isNum(h.u)) d.u.push(h.u);
+        if (isNum(h.c)) d.c = d.c == null ? h.c : Math.max(d.c, h.c);
+      }
+      maps.set(c,p);
+    }
+    return { maps, lastAt: (state.data && state.data.updatedAt) || null };
+  }
+  const has = d => !!(d && d.n > 0);
+  const rev = d => has(d) ? d.m * RATE : 0;
+  function metricVal(d, m){
+    if (!has(d)) return null;
+    if (m === 'rev') return d.m * RATE;
+    if (m === 'u') return mean(d.u) ?? 0;
+    if (m === 'c') return d.c ?? 0;
+    return d.m;
+  }
+  function fmtMetric(v, m){
+    if (v == null) return 'aucune donnée';
+    if (m === 'rev') return money(v);
+    if (m === 'u') return num(v,1) + ' joueurs/h';
+    if (m === 'c') return num(v) + ' joueurs';
+    return num(v) + ' min';
+  }
+  const dayName = k => { const t = today(); return k === t ? "aujourd'hui" : k === addDays(t,-1) ? 'hier' : 'le ' + short(k); };
+  const whenTxt = iso => { const d = new Date(iso); return (dayKey(d) === today() ? '' : short(dayKey(d)) + ' ') + hmFmt.format(d); };
+
+  function events(){
+    const list = state.data && Array.isArray(state.data.events) ? state.data.events : [];
+    return list.filter(e => e && e.at && e.code).slice(0, 80).map(e => {
+      const nm = nameOf(e.code);
+      if (e.k === 'rev' && isNum(e.m)) return { at:e.at, text:'💰 ' + nm + ' · ' + range(e.t) + ' : ~' + money(e.m*RATE) + ' (' + num(e.m) + ' min)' };
+      return { at:e.at, text: isNum(e.ccu) ? '👥 ' + nm + ' : ' + num(e.ccu) + ' joueurs connectés' : '👥 ' + nm + ' : moins de 5 joueurs' };
+    });
+  }
+
+  function render(){
+    const M = model(), t = today(), list = mapList();
+    if (!list.some(m => m.code === state.code)) state.code = list[0].code;
+    const P = M.maps.get(state.code) || EMPTY;
+    if (state.sel == null || !state.picked){
+      let s = t;
+      if (!has(P.days.get(t))) for (let i = 1; i <= MAX_BACK; i++){ const k = addDays(t,-i); if (has(P.days.get(k))){ s = k; break; } }
+      state.sel = s;
+    }
+    const sel = state.sel, d = P.days.get(sel), prevK = addDays(sel,-1), pd = P.days.get(prevK);
+
+    $('#pageTitle').textContent = TABS[state.tab];
+    for (const k of Object.keys(TABS)){
+      $('#view-' + k).hidden = state.tab !== k;
+      const b = $('#tab-' + k);
+      if (state.tab === k) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+    }
+    $('#menu').hidden = !state.menu;
+    $('#menuBtn').setAttribute('aria-expanded', String(state.menu));
+    $('#eye').setAttribute('aria-pressed', String(state.hide));
+    $('#eye').setAttribute('aria-label', state.hide ? 'Afficher les montants' : 'Masquer les montants');
+    $('#eyeOn').hidden = state.hide; $('#eyeOff').hidden = !state.hide;
+    ['eur','usd'].forEach(c => $('#cur-'+c).setAttribute('aria-pressed', String(state.cur === c)));
+
+    const liveEl = $('#live'), lt = $('#liveTxt');
+    liveEl.classList.remove('on');
+    if (!M.lastAt) lt.textContent = !state.loaded ? 'Chargement…' : state.failed ? 'Pas de connexion' : 'Premier relevé en cours';
+    else {
+      const at = new Date(M.lastAt);
+      if (Date.now() - at < 75*60e3){ liveEl.classList.add('on'); lt.textContent = 'En direct'; }
+      else lt.textContent = 'Dernier relevé ' + (dayKey(at) === t ? 'à ' : 'le ' + short(dayKey(at)) + ' à ') + hmFmt.format(at);
+    }
+
+    const nav = $('#mapsNav'); nav.textContent = '';
+    for (const m of list){
+      const b = mk('button', 'chip', m.name || m.code); b.type = 'button'; b.id = 'map-' + m.code;
+      b.setAttribute('aria-pressed', String(m.code === state.code));
+      b.addEventListener('click', () => selectMap(m.code));
+      nav.append(b);
+    }
+    nav.hidden = list.length < 2;
+
+    $('#dayLabel').textContent = sel === t ? 'CA du jour' : sel === addDays(t,-1) ? "CA d'hier" : 'CA du ' + short(sel);
+    $('#next').disabled = sel >= t;
+    $('#prev').disabled = sel <= addDays(t,-MAX_BACK);
+    const r = rev(d), big = $('#big'); big.textContent = '';
+    if (state.hide) big.append(mk('span','int','••••'), mk('span','dec',' ' + sym()));
+    else { const parts = money(r).split(','); big.append(mk('span','int',parts[0]), mk('span','dec',',' + parts[1])); }
+    const pill = $('#pill'), ct = $('#cmpTxt'), pr = rev(pd), prevName = prevK === addDays(t,-1) ? 'hier' : 'le ' + short(prevK);
+    pill.hidden = true; pill.className = 'pill';
+    if (M.lastAt && !M.maps.has(state.code)) ct.textContent = 'Nouvelle map : premières données au prochain relevé';
+    else if (!has(d) && !has(pd)) ct.textContent = sel === t ? "Pas encore de données aujourd'hui" : 'Aucune donnée ce jour-là';
+    else {
+      ct.textContent = 'contre ' + money(pr) + ' ' + prevName;
+      if (pr > 0){
+        const pct = Math.round((r - pr) / pr * 100);
+        pill.hidden = false; pill.classList.add(pct >= 0 ? 'up' : 'down');
+        pill.textContent = (pct >= 0 ? '↑ ' : '↓ ') + num(Math.abs(pct)) + ' %';
+      } else if (r > 0){ pill.hidden = false; pill.classList.add('up'); pill.textContent = '↑ Nouveau'; }
+    }
+
+    $('#tilesTitle').textContent = sel === t ? "Aujourd'hui" : sel === addDays(t,-1) ? 'Hier' : short(sel);
+    const lv = P.live;
+    $('#v-live').textContent = lv ? (isNum(lv.ccu) ? num(lv.ccu) : '<5') : '—';
+    $('#s-live').textContent = lv && isNum(lv.ccu) ? 'à ' + hmFmt.format(new Date(lv.t)) : lv ? 'moins de 5' : 'pas encore relevé';
+    const lh = P.lastHour;
+    $('#v-last').textContent = lh ? money(lh.m * RATE) : '—';
+    $('#s-last').textContent = lh ? range(lh.t) : 'pas encore de données';
+    $('#v-peak').textContent = has(d) ? (d.c != null ? num(d.c) : '<5') : '—';
+    $('#s-peak').textContent = has(d) ? 'max sur une heure' : 'aucune donnée';
+    const au = has(d) ? mean(d.u) : null;
+    $('#v-avg').textContent = has(d) ? (au != null ? num(au,1) : '<5') : '—';
+    $('#s-avg').textContent = has(d) ? d.n + ' h avec données' : 'aucune donnée';
+    $('#v-min').textContent = has(d) ? num(d.m) : '—';
+    $('#s-min').textContent = has(d) ? '≈ ' + money(r) : 'aucune donnée';
+    $('#v-plays').textContent = has(d) ? num(d.pl) : '—';
+    $('#footData').textContent = P.lastData ? 'Dernière heure publiée pour ' + nameOf(state.code) + ' : ' + range(P.lastData) + '.' : '';
+
+    renderMaps(M, list);
+    renderNotifs();
+    if (state.tab === 'dashboard') drawChart(P); else lastP = P;
+  }
+
+  function renderMaps(M, list){
+    const sel = state.sel;
+    $('#cmpTitle').textContent = 'Classement · ' + dayName(sel);
+    const rows = list.map(m => {
+      const p = M.maps.get(m.code) || EMPTY, d = p.days.get(sel);
+      let w = 0; for (let i = 0; i < 7; i++) w += rev(p.days.get(addDays(sel,-i)));
+      return { m, r:rev(d), w, u: has(d) ? mean(d.u) : null, has:has(d), live:p.live };
+    }).sort((a,b) => b.r - a.r || b.w - a.w);
+    const max = Math.max(0, ...rows.map(x => x.r)), total = rows.reduce((s,x) => s + x.r, 0);
+    $('#cmpTotal').textContent = 'Total : ' + money(total);
+    const ol = $('#rank'); ol.textContent = '';
+    for (const x of rows){
+      const li = mk('li');
+      const main = mk('button','row-main'); main.type = 'button'; main.id = 'rank-' + x.m.code;
+      main.setAttribute('aria-pressed', String(x.m.code === state.code));
+      const top = mk('div','row-top'); top.append(mk('span','nm', x.m.name || x.m.code), mk('span','amt', money(x.r)));
+      const bar = mk('div','bar'); const fill = mk('i'); fill.style.width = (max > 0 ? x.r / max * 100 : 0) + '%'; bar.append(fill);
+      const share = total > 0 ? num(x.r / total * 100) + ' % du total · ' : '';
+      const players = x.live ? (isNum(x.live.ccu) ? ' · 👥 ' + num(x.live.ccu) + ' connectés' : ' · 👥 <5') : '';
+      main.append(top, mk('div','row-code', x.m.code), bar, mk('div','row-sub', share + '7 j : ' + money(x.w) + players));
+      main.addEventListener('click', () => { selectMap(x.m.code); go('dashboard'); });
+      li.append(main); ol.append(li);
+    }
+  }
+
+  function renderNotifs(){
+    const ev = events(), newest = ev[0] ? ev[0].at : '';
+    const onFeed = state.tab === 'activite';
+    const unseen = onFeed ? 0 : ev.filter(e => e.at > state.seen).length;
+    const txt = unseen > 9 ? '9+' : String(unseen);
+    $('#badge').hidden = !unseen; $('#badge').textContent = txt;
+    $('#menuCount').hidden = !unseen; $('#menuCount').textContent = txt;
+    $('#mega').setAttribute('aria-label', unseen ? 'Activité, ' + unseen + ' nouveautés' : 'Activité');
+    renderPush();
+    if (!onFeed) return;
+    const ol = $('#notifList'); ol.textContent = '';
+    const seenBefore = state.openedSeen ?? state.seen;
+    for (const e of ev){
+      const li = mk('li', e.at > seenBefore ? 'new' : '');
+      li.append(mk('span','txt',e.text), mk('span','when',whenTxt(e.at)));
+      ol.append(li);
+    }
+    $('#notifEmpty').hidden = ev.length > 0;
+    if (newest && newest > state.seen){ state.seen = newest; store('myuefn-seen', newest); }
+  }
+
+  /* ---------- Notifications ---------- */
+  const standalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  const b64u = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  const fromB64u = s => { const p = s.replace(/-/g,'+').replace(/_/g,'/') + '='.repeat((4 - s.length % 4) % 4); return Uint8Array.from(atob(p), c => c.charCodeAt(0)); };
+  function pushMsg(text, ok){ const m = $('#pushMsg'); m.hidden = !text; m.textContent = text || ''; m.classList.toggle('ok', !!ok); }
+  function renderPush(){
+    const code = load('myuefn-push-code');
+    $('#pushStep2').hidden = !code;
+    $('#pushStep1').hidden = !!code;
+    if (code) $('#pushCode').value = code;
+    if (!code && !standalone()) $('#pushIntro').textContent = "Ajoute d'abord MyUEFN à ton écran d'accueil (Partager › Sur l'écran d'accueil), puis ouvre l'app depuis son icône pour activer les notifications.";
+  }
+  async function enablePush(){
+    pushMsg('');
+    if (!standalone()){ pushMsg("Ouvre MyUEFN depuis l'icône de ton écran d'accueil, puis réessaie."); return; }
+    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)){ pushMsg("Ce téléphone n'accepte pas les notifications web. Il faut iOS 16.4 ou plus récent."); return; }
+    const btn = $('#pushBtn'); btn.disabled = true;
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm !== 'granted'){ pushMsg('Notifications refusées. Autorise-les dans Réglages › Notifications › MyUEFN, puis réessaie.'); return; }
+      const reg = await navigator.serviceWorker.ready;
+      const kp = await crypto.subtle.generateKey({ name:'ECDSA', namedCurve:'P-256' }, true, ['sign','verify']);
+      const jwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+      const pub = b64u(await crypto.subtle.exportKey('raw', kp.publicKey));
+      const old = await reg.pushManager.getSubscription(); if (old) await old.unsubscribe();
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: fromB64u(pub) });
+      store('myuefn-push-code', JSON.stringify({ pub, priv: jwk.d, sub: sub.toJSON() }));
+      renderPush();
+      pushMsg('Notifications autorisées sur ce téléphone.', true);
+    } catch(e){ pushMsg("L'activation n'a pas marché (" + (e && e.message || e) + '). Réessaie.'); }
+    finally { btn.disabled = false; }
+  }
+  $('#pushBtn').addEventListener('click', enablePush);
+  $('#copyBtn').addEventListener('click', () => {
+    const ta = $('#pushCode');
+    const done = () => pushMsg('Code copié. Colle-le dans GitHub.', true);
+    try {
+      navigator.clipboard.writeText(ta.value).then(done, () => { ta.focus(); ta.select(); pushMsg('Sélectionne le texte et copie-le.'); });
+    } catch(e){ ta.focus(); ta.select(); pushMsg('Sélectionne le texte et copie-le.'); }
+  });
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+
+  /* ---------- Chart ---------- */
+  function windowKeys(){
+    let end = today();
+    while (state.sel < addDays(end,-6)) end = addDays(end,-7);
+    return Array.from({length:7}, (_,i) => addDays(end, i-6));
+  }
+  let lastP = null;
+  function drawChart(P){
+    lastP = P;
+    const el = $('#chart'); el.textContent = '';
+    if (!window.d3 || state.tab !== 'dashboard') return;
+    const W = Math.max(260, el.clientWidth || 360), H = 210, mt = 26, mb = 32, ml = 14, mr = 18;
+    const keys = windowKeys(), m = state.metric;
+    const vals = keys.map(k => metricVal(P.days.get(k), m));
+    const ys = vals.map(v => v ?? 0);
+    const x = d3.scalePoint().domain(keys).range([ml, W-mr]);
+    const max = d3.max(ys) || 0;
+    const y = d3.scaleLinear().domain([0, max > 0 ? max*1.18 : 1]).range([H-mb, mt]);
+    const svg = d3.select(el).append('svg').attr('width', W).attr('height', H).attr('viewBox', `0 0 ${W} ${H}`).attr('role','img').attr('aria-label','Évolution sur 7 jours');
+    const g = svg.append('defs').append('linearGradient').attr('id','mu-area').attr('x1',0).attr('x2',0).attr('y1',0).attr('y2',1);
+    g.append('stop').attr('offset','0%').attr('stop-color','#8f97ff').attr('stop-opacity',.32);
+    g.append('stop').attr('offset','100%').attr('stop-color','#8f97ff').attr('stop-opacity',0);
+    const line = d3.line().x((_,i) => x(keys[i])).y(v => y(v)).curve(d3.curveMonotoneX);
+    const area = d3.area().x((_,i) => x(keys[i])).y0(H-mb).y1(v => y(v)).curve(d3.curveMonotoneX);
+    svg.append('path').attr('d', area(ys)).attr('fill','url(#mu-area)');
+    svg.append('path').attr('d', line(ys)).attr('fill','none').attr('stroke','#8f97ff').attr('stroke-width',10).attr('stroke-opacity',.16).attr('stroke-linecap','round');
+    svg.append('path').attr('d', line(ys)).attr('fill','none').attr('stroke','#8f97ff').attr('stroke-width',3).attr('stroke-linecap','round');
+    const step = W / keys.length < 54 ? 2 : 1;
+    keys.forEach((k,i) => {
+      if (i % step) return;
+      svg.append('text').attr('x', x(k)).attr('y', H-8)
+        .attr('text-anchor', i === 0 ? 'start' : i === keys.length-1 ? 'end' : 'middle')
+        .attr('fill', k === state.sel ? '#f3f4fa' : '#868ba2').attr('font-size', 12.5).attr('font-weight', k === state.sel ? 600 : 400)
+        .text(short(k));
+    });
+    if (max === 0) svg.append('text').attr('x', W/2).attr('y', (H-mb)/2 + 6).attr('text-anchor','middle').attr('fill','#868ba2').attr('font-size',13).text('Pas encore de données sur ces 7 jours');
+    const si = keys.indexOf(state.sel);
+    if (si >= 0){
+      svg.append('circle').attr('cx', x(keys[si])).attr('cy', y(ys[si])).attr('r', 13).attr('fill','#8f97ff').attr('fill-opacity', .22);
+      svg.append('circle').attr('cx', x(keys[si])).attr('cy', y(ys[si])).attr('r', 6.5).attr('fill','#ffffff');
+    }
+    const guide = svg.append('line').attr('y1', mt-6).attr('y2', H-mb).attr('stroke','#232738').attr('stroke-width',1).attr('opacity',0);
+    const tip = $('#tip');
+    const nearest = ev => { const [px] = d3.pointer(ev, svg.node()); let b = 0; keys.forEach((k,i) => { if (Math.abs(x(k)-px) < Math.abs(x(keys[b])-px)) b = i; }); return b; };
+    svg.append('rect').attr('width',W).attr('height',H).attr('fill','transparent').style('cursor','pointer')
+      .on('pointermove pointerdown', ev => {
+        const i = nearest(ev), cx = x(keys[i]);
+        guide.attr('x1',cx).attr('x2',cx).attr('opacity',1);
+        tip.hidden = false; tip.textContent = '';
+        tip.append(mk('span', null, short(keys[i]) + ' · '), document.createTextNode(fmtMetric(vals[i], m)));
+        const tw = tip.offsetWidth; tip.style.left = Math.min(Math.max(cx - tw/2, 0), W - tw) + 'px';
+      })
+      .on('pointerleave', () => { tip.hidden = true; guide.attr('opacity',0); })
+      .on('click', ev => { state.sel = keys[nearest(ev)]; state.picked = true; render(); });
+  }
+
+  /* ---------- Navigation ---------- */
+  function go(tab){
+    if (!TABS[tab]) tab = 'dashboard';
+    const changed = tab !== state.tab;
+    state.tab = tab; state.menu = false;
+    state.openedSeen = tab === 'activite' ? state.seen : undefined;
+    if ((location.hash || '').slice(1) !== tab){ try { history.replaceState(null, '', '#' + tab); } catch(e){ location.hash = tab; } }
+    render();
+    if (changed) window.scrollTo(0, 0);
+  }
+  window.addEventListener('hashchange', () => { const h = hashTab(); if (h !== state.tab) go(h); });
+  function selectMap(code){ state.code = code; state.picked = false; store('myuefn-map', code); render(); }
+
+  $('#menuBtn').addEventListener('click', () => { state.menu = !state.menu; render(); });
+  document.querySelectorAll('#menu button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
+  document.addEventListener('click', e => { if (state.menu && !e.target.closest('#menu') && !e.target.closest('#menuBtn')){ state.menu = false; render(); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.menu){ state.menu = false; render(); $('#menuBtn').focus(); } });
+  $('#mega').addEventListener('click', () => go(state.tab === 'activite' ? 'dashboard' : 'activite'));
+  $('#eye').addEventListener('click', () => { state.hide = !state.hide; store('myuefn-hide', state.hide ? '1' : '0'); render(); });
+  $('#prev').addEventListener('click', () => { state.sel = addDays(state.sel,-1); state.picked = true; render(); });
+  $('#next').addEventListener('click', () => { if (state.sel < today()){ state.sel = addDays(state.sel,1); state.picked = true; render(); } });
+  document.querySelectorAll('.cur button').forEach(b => b.addEventListener('click', () => { state.cur = b.dataset.cur; store('myuefn-cur', state.cur); render(); }));
+  $('#metric').addEventListener('change', e => { state.metric = e.target.value; store('myuefn-metric', state.metric); if (lastP) drawChart(lastP); });
+  let rz; if (window.ResizeObserver) new ResizeObserver(() => { clearTimeout(rz); rz = setTimeout(() => lastP && drawChart(lastP), 80); }).observe($('#chart'));
+
+  /* ---------- Data ---------- */
+  async function loadData(){
+    if (state.fetching) return; state.fetching = true;
+    let ok = false;
+    for (const u of [RAW, 'data.json']){
+      try {
+        const r = await fetch(u + '?ts=' + Date.now(), { cache:'no-store' });
+        if (!r.ok) continue;
+        const j = await r.json();
+        if (j && j.byCode){ state.data = j; ok = true; store('myuefn-data', JSON.stringify(j)); break; }
+      } catch(e){}
+    }
+    state.fetching = false; state.loaded = true; state.failed = !ok && !state.data;
+    render();
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadData(); });
+  setInterval(() => { if (document.visibilityState === 'visible') loadData(); }, 5*60e3);
+  setInterval(() => { if (document.visibilityState === 'visible') render(); }, 60e3);
+  render();
+  loadData();
+})();
+</script>
+</body>
+</html>
