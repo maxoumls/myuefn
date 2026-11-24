@@ -134,6 +134,40 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
 .notif-list .when{color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums;padding-top:1px}
 .notif-empty{margin:16px 0 0;padding:16px;border-radius:14px;border:1px dashed var(--line);font-size:14px;color:var(--muted);line-height:1.5}
 
+/* Desktop (PC): wider page, tabs in the bar instead of the menu, dashboard on two columns */
+.dtabs{display:none}
+@media (min-width:960px){
+  .appbar-in,.page{max-width:1180px}
+  .appbar-in{gap:20px;padding-block:14px}
+  .brand{flex:none;margin-right:12px}
+  .dtabs{display:flex;gap:4px;flex:1;min-width:0}
+  .dtab{display:flex;align-items:center;gap:8px;padding:10px 16px;border:0;border-radius:12px;background:transparent;color:var(--muted);font-size:15px;font-weight:600}
+  .dtab:hover{color:var(--fg);background:var(--surface)}
+  .dtab[aria-current="page"]{background:var(--surface-2);color:var(--fg)}
+  #menuBtn,.menu{display:none!important}
+  .page{padding-block:30px 56px}
+  .page::before{top:120px;width:900px}
+  .titlebar h1{font-size:36px}
+  #view-dashboard{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);column-gap:28px;align-items:start;
+    grid-template-areas:"maps maps" "hero head" "hero tiles" "chart tiles" "foot foot"}
+  #view-dashboard[hidden]{display:none!important}
+  #mapsNav{grid-area:maps}
+  #view-dashboard .hero{grid-area:hero;margin-top:22px;padding:30px 24px 28px;border-radius:22px;background:var(--surface);border:1px solid var(--line)}
+  #view-dashboard .chartwrap{grid-area:chart;margin-top:16px;padding:12px 20px 8px;border-radius:22px;background:var(--surface);border:1px solid var(--line)}
+  #view-dashboard .chartwrap .tip{top:46px}
+  #view-dashboard .sec-head{grid-area:head;margin-top:22px}
+  #view-dashboard .tiles{grid-area:tiles;align-self:start}
+  #view-dashboard .tile{padding:18px 20px}
+  #view-dashboard .tile .val{font-size:30px}
+  #view-dashboard .foot{grid-area:foot}
+  .big .int{font-size:112px}
+  .big .dec{font-size:40px}
+  #view-maps .rank{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  #view-maps .card{max-width:640px}
+  #view-activite{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:24px;align-items:start}
+  #view-activite[hidden]{display:none!important}
+  #view-activite .notif-list,#view-activite .notif-empty{margin-top:16px}
+}
 @media (max-width:380px){.titlebar h1{font-size:26px}.cur button{width:38px}.actions{gap:6px}}
 @media (prefers-reduced-motion:reduce){.live.on .dot{animation:none}}
 </style>
@@ -143,6 +177,11 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
   <div class="appbar-in">
     <div class="logo" aria-hidden="true">MU</div>
     <p class="brand">MyUEFN</p>
+    <nav class="dtabs" aria-label="Onglets">
+      <button type="button" class="dtab" data-tab="dashboard">Dashboard</button>
+      <button type="button" class="dtab" data-tab="maps">Maps</button>
+      <button type="button" class="dtab" data-tab="activite">Activité<span class="count" id="dCount" hidden></span></button>
+    </nav>
     <button class="ibtn" id="eye" type="button" aria-pressed="false" aria-label="Masquer les montants">
       <svg id="eyeOn" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
       <svg id="eyeOff" hidden width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-3.2 4.2"/><path d="M6.6 6.6C3.9 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.4"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
@@ -221,7 +260,7 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
       <div class="tile"><div class="lbl">Parties lancées</div><div class="val" id="v-plays">—</div><div class="sub">sur la journée</div></div>
     </section>
 
-    <p class="foot">Revenu estimé : 688 $ par million de minutes jouées. Données officielles Epic, relevées chaque heure. 1 $ = 0,87 € (taux fixe). <span id="footData"></span></p>
+    <p class="foot">Revenu estimé : 688 $ par million de minutes jouées. Données officielles Epic, actualisées chaque minute quand l'app est ouverte (Epic compte les joueurs par tranches de 10 minutes). 1 $ = 0,87 € (taux fixe). <span id="footData"></span></p>
   </div>
 
   <div id="view-maps" hidden>
@@ -372,6 +411,7 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
       const b = $('#tab-' + k);
       if (state.tab === k) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
     }
+    document.querySelectorAll('.dtab').forEach(b => { if (b.dataset.tab === state.tab) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
     $('#menu').hidden = !state.menu;
     $('#menuBtn').setAttribute('aria-expanded', String(state.menu));
     $('#eye').setAttribute('aria-pressed', String(state.hide));
@@ -381,7 +421,8 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
 
     const liveEl = $('#live'), lt = $('#liveTxt');
     liveEl.classList.remove('on');
-    if (!M.lastAt) lt.textContent = !state.loaded ? 'Chargement…' : state.failed ? 'Pas de connexion' : 'Premier relevé en cours';
+    if (state.liveAt && Date.now() - state.liveAt < 3*60e3){ liveEl.classList.add('on'); lt.textContent = 'En direct · ' + hmFmt.format(new Date(state.liveAt)); }
+    else if (!M.lastAt) lt.textContent = !state.loaded ? 'Chargement…' : state.failed ? 'Pas de connexion' : 'Premier relevé en cours';
     else {
       const at = new Date(M.lastAt);
       if (Date.now() - at < 75*60e3){ liveEl.classList.add('on'); lt.textContent = 'En direct'; }
@@ -470,6 +511,7 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
     const txt = unseen > 9 ? '9+' : String(unseen);
     $('#badge').hidden = !unseen; $('#badge').textContent = txt;
     $('#menuCount').hidden = !unseen; $('#menuCount').textContent = txt;
+    $('#dCount').hidden = !unseen; $('#dCount').textContent = txt;
     $('#mega').setAttribute('aria-label', unseen ? 'Activité, ' + unseen + ' nouveautés' : 'Activité');
     renderPush();
     if (!onFeed) return;
@@ -494,7 +536,9 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
     $('#pushStep2').hidden = !code;
     $('#pushStep1').hidden = !!code;
     if (code) $('#pushCode').value = code;
-    if (!code && !standalone()) $('#pushIntro').textContent = "Ajoute d'abord MyUEFN à ton écran d'accueil (Partager › Sur l'écran d'accueil), puis ouvre l'app depuis son icône pour activer les notifications.";
+    const desk = window.matchMedia && matchMedia('(min-width:960px) and (pointer:fine)').matches;
+    if (!code && desk){ $('#pushIntro').textContent = "Les notifications arrivent sur ton iPhone. Pour les activer, ouvre MyUEFN depuis son icône sur l'écran d'accueil de l'iPhone."; $('#pushStep1').hidden = true; }
+    else if (!code && !standalone()) $('#pushIntro').textContent = "Ajoute d'abord MyUEFN à ton écran d'accueil (Partager › Sur l'écran d'accueil), puis ouvre l'app depuis son icône pour activer les notifications.";
   }
   async function enablePush(){
     pushMsg('');
@@ -596,7 +640,7 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
   function selectMap(code){ state.code = code; state.picked = false; store('myuefn-map', code); render(); }
 
   $('#menuBtn').addEventListener('click', () => { state.menu = !state.menu; render(); });
-  document.querySelectorAll('#menu button').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
+  document.querySelectorAll('#menu button, .dtab').forEach(b => b.addEventListener('click', () => go(b.dataset.tab)));
   document.addEventListener('click', e => { if (state.menu && !e.target.closest('#menu') && !e.target.closest('#menuBtn')){ state.menu = false; render(); } });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && state.menu){ state.menu = false; render(); $('#menuBtn').focus(); } });
   $('#mega').addEventListener('click', () => go(state.tab === 'activite' ? 'dashboard' : 'activite'));
@@ -619,14 +663,67 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
         if (j && j.byCode){ state.data = j; ok = true; store('myuefn-data', JSON.stringify(j)); break; }
       } catch(e){}
     }
+    applyLive();
     state.fetching = false; state.loaded = true; state.failed = !ok && !state.data;
     render();
   }
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') loadData(); });
+
+  /* ---------- Direct : chiffres lus chez Epic à chaque minute ---------- */
+  const API = 'https://api.fortnite.com/ecosystem/v1/islands/';
+  const K = { m:'minutesPlayed', u:'uniquePlayers', c:'peakCCU', pl:'plays', a:'averageMinutesPerPlayer' };
+  const liveCache = {};
+  const series = (j,k) => Array.isArray(j && j[k]) ? j[k] : (j && j[k] && Array.isArray(j[k].intervals)) ? j[k].intervals : [];
+  async function getJSON(u){ const r = await fetch(u, { cache:'no-store' }); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
+  function applyLive(){
+    if (!Object.keys(liveCache).length) return;
+    const d = state.data || (state.data = { maps: mapList(), byCode:{}, events:[] });
+    d.byCode = d.byCode || {};
+    for (const [code, v] of Object.entries(liveCache)){
+      const cur = d.byCode[code] || (d.byCode[code] = { hours:[], live:null });
+      const m = new Map((cur.hours || []).map(h => [h.t, h]));
+      for (const r of v.rows) m.set(r.t, r);
+      cur.hours = [...m.values()].sort((a,b) => a.t < b.t ? -1 : 1);
+      if (v.live) cur.live = v.live;
+    }
+  }
+  async function fetchLive(){
+    if (state.liveBusy) return; state.liveBusy = true;
+    const now = new Date();
+    const fromH = new Date(now - 26*36e5); fromH.setUTCMinutes(0,0,0);
+    const fromM = new Date(now - 36e5); fromM.setUTCMinutes(Math.floor(fromM.getUTCMinutes()/10)*10,0,0);
+    let any = false;
+    await Promise.all(mapList().map(async map => {
+      const entry = liveCache[map.code] || (liveCache[map.code] = { rows:[], live:null });
+      try {
+        const j = await getJSON(API + map.code + '/metrics/hour?from=' + fromH.toISOString());
+        const rows = new Map();
+        for (const [k,key] of Object.entries(K)) for (const e of series(j,key)){
+          if (!e || typeof e.timestamp !== 'string') continue;
+          const r = rows.get(e.timestamp) || { t:e.timestamp, m:null, u:null, c:null, pl:null, a:null };
+          r[k] = isNum(e.value) ? e.value : null; rows.set(e.timestamp, r);
+        }
+        entry.rows = [...rows.values()].filter(r => Object.keys(K).some(k => r[k] != null));
+        any = true;
+      } catch(e){}
+      try {
+        const j = await getJSON(API + map.code + '/metrics/minute/peak-ccu?from=' + fromM.toISOString());
+        const iv = (j && Array.isArray(j.intervals) ? j.intervals : []).filter(e => e && typeof e.timestamp === 'string').sort((a,b) => a.timestamp < b.timestamp ? -1 : 1);
+        const last = [...iv].reverse().find(e => isNum(e.value));
+        entry.live = last ? { t:last.timestamp, ccu:last.value } : { t: iv.length ? iv[iv.length-1].timestamp : now.toISOString(), ccu:null };
+        any = true;
+      } catch(e){}
+    }));
+    if (any){ state.liveAt = Date.now(); applyLive(); state.loaded = true; state.failed = false; }
+    state.liveBusy = false;
+    render();
+  }
+  setInterval(() => { if (document.visibilityState === 'visible') fetchLive(); }, 60e3);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible'){ loadData(); fetchLive(); } });
   setInterval(() => { if (document.visibilityState === 'visible') loadData(); }, 5*60e3);
   setInterval(() => { if (document.visibilityState === 'visible') render(); }, 60e3);
   render();
   loadData();
+  fetchLive();
 })();
 </script>
 </body>
