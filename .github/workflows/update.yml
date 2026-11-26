@@ -34,7 +34,7 @@ jobs:
           import { readFileSync, writeFileSync } from 'node:fs';
 
           const API = 'https://api.fortnite.com/ecosystem/v1/islands/';
-          const RATE = 0.000688, KEEP_DAYS = 40, TZ = 'Europe/Paris';
+          const RATE = 0.000688, KEEP_DAYS = 3650, TZ = 'Europe/Paris';
           const now = new Date();
           const iso = d => new Date(d).toISOString();
           const floorHour = d => { const x = new Date(d); x.setUTCMinutes(0, 0, 0); return x; };
