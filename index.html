@@ -438,24 +438,19 @@ button:focus-visible,select:focus-visible,a:focus-visible,textarea:focus-visible
     }
     nav.hidden = list.length < 2;
 
-    $('#dayLabel').textContent = sel === t ? 'CA du jour' : sel === addDays(t,-1) ? "CA d'hier" : 'CA du ' + short(sel);
+    $('#dayLabel').textContent = 'CA total';
     $('#next').disabled = sel >= t;
     $('#prev').disabled = sel <= addDays(t,-MAX_BACK);
     const r = rev(d), big = $('#big'); big.textContent = '';
+    let allRev = 0, firstDay = null;
+    for (const [k, dd] of P.days){ if (!has(dd)) continue; allRev += rev(dd); if (!firstDay || k < firstDay) firstDay = k; }
     if (state.hide) big.append(mk('span','int','••••'), mk('span','dec',' ' + sym()));
-    else { const parts = money(r).split(','); big.append(mk('span','int',parts[0]), mk('span','dec',',' + parts[1])); }
-    const pill = $('#pill'), ct = $('#cmpTxt'), pr = rev(pd), prevName = prevK === addDays(t,-1) ? 'hier' : 'le ' + short(prevK);
+    else { const parts = money(allRev).split(','); big.append(mk('span','int',parts[0]), mk('span','dec',',' + parts[1])); }
+    const pill = $('#pill'), ct = $('#cmpTxt');
     pill.hidden = true; pill.className = 'pill';
     if (M.lastAt && !M.maps.has(state.code)) ct.textContent = 'Nouvelle map : premières données au prochain relevé';
-    else if (!has(d) && !has(pd)) ct.textContent = sel === t ? "Pas encore de données aujourd'hui" : 'Aucune donnée ce jour-là';
-    else {
-      ct.textContent = 'contre ' + money(pr) + ' ' + prevName;
-      if (pr > 0){
-        const pct = Math.round((r - pr) / pr * 100);
-        pill.hidden = false; pill.classList.add(pct >= 0 ? 'up' : 'down');
-        pill.textContent = (pct >= 0 ? '↑ ' : '↓ ') + num(Math.abs(pct)) + ' %';
-      } else if (r > 0){ pill.hidden = false; pill.classList.add('up'); pill.textContent = '↑ Nouveau'; }
-    }
+    else if (!firstDay) ct.textContent = 'Pas encore de données';
+    else ct.textContent = 'depuis le ' + short(firstDay);
 
     $('#tilesTitle').textContent = sel === t ? "Aujourd'hui" : sel === addDays(t,-1) ? 'Hier' : short(sel);
     const lv = P.live;
